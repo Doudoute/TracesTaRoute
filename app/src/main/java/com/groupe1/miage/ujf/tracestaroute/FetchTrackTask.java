@@ -15,14 +15,17 @@
  */
 package com.groupe1.miage.ujf.tracestaroute;
 
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.ArrayAdapter;
+import android.widget.Toast;
 
 import com.groupe1.miage.ujf.tracestaroute.data.TrackContract;
 import com.groupe1.miage.ujf.tracestaroute.data.TrackContract.TrackEntry;
@@ -77,17 +80,47 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
     /**
      * Helper method to handle insertion of a new location in the weather database.
      *
-     * @param locationSetting The location string used to request updates from the server.
      * @param cityName A human-readable city name, e.g "Mountain View"
      * @param lat the latitude of the city
      * @param lon the longitude of the city
      * @return the row ID of the added location.
      */
-    long addLocation(String locationSetting, String cityName, double lat, double lon) {
-        // Students: First, check if the location with this city name exists in the db
-        // If it exists, return the current ID
-        // Otherwise, insert it using the content resolver and the base URI
-        return -1;
+    long addLocation(String cityName, double lat, double lon) {
+        long locationId;
+
+        // On regarde si la location avec nom de ville, x et y existe déja
+        Cursor locationCursor = mContext.getContentResolver().query(
+                TrackContract.LocationEntry.CONTENT_URI,
+                new String[]{TrackContract.LocationEntry._ID},
+                TrackContract.LocationEntry.COLUMN_CITY + " = ? AND " +
+                TrackContract.LocationEntry.COLUMN_COORD_LAT + " = ? AND " +
+                TrackContract.LocationEntry.COLUMN_COORD_LONG + " = ?",
+                new String[]{cityName,String.valueOf(lat),String.valueOf(lon)},
+                null);
+
+        if (locationCursor.moveToFirst()) {
+            int locationIdIndex = locationCursor.getColumnIndex(TrackContract.LocationEntry._ID);
+            locationId = locationCursor.getLong(locationIdIndex);
+        } else {
+            //Création du lieu
+            ContentValues locationValues = new ContentValues();
+
+            //Ajout des informations
+            locationValues.put(TrackContract.LocationEntry.COLUMN_CITY, cityName);
+            locationValues.put(TrackContract.LocationEntry.COLUMN_COORD_LAT, lat);
+            locationValues.put(TrackContract.LocationEntry.COLUMN_COORD_LONG, lon);
+
+            //Insertion dans la BD
+            Uri insertedUri = mContext.getContentResolver().insert(
+                    TrackContract.LocationEntry.CONTENT_URI,
+                    locationValues
+            );
+
+            locationId = ContentUris.parseId(insertedUri);
+        }
+
+        locationCursor.close();
+        return locationId;
     }
 
     /*
@@ -196,8 +229,8 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
                 //altMax = Double.valueOf(tabMes[2]);
 				
 				//Insertion des villes de départ et d'arrivée en BD
-				long locationIdD = addLocation(locationSetting, cityDepart, yDepart, xDepart);
-				long locationIdA = addLocation(locationSetting, cityArrivee, yArrivee, xArrivee);
+				long locationIdD = addLocation(cityDepart, yDepart, xDepart);
+				long locationIdA = addLocation(cityArrivee, yArrivee, xArrivee);
 
                 ContentValues trackValues = new ContentValues();
 				
@@ -345,7 +378,9 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
             for(String dayForecastStr : result) {
                 mForecastAdapter.add(dayForecastStr);
             }
-            // New data is back from the server.  Hooray!
+            if(result.length == 0){
+                Toast.makeText(mForecastAdapter.getContext(), R.string.no_track, Toast.LENGTH_SHORT).show();
+            }
         }
     }
 }

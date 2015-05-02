@@ -22,6 +22,7 @@ import java.util.Set;
  */
 public class TestUtilities extends AndroidTestCase {
     static final String TEST_LOCATION = "99705";
+    static final String TEST_CITY = "North Pole";
     static final String TEST_DATE = "1419033600L";  // December 20th, 2014
 
     static void validateCursor(String error, Cursor valueCursor, ContentValues expectedValues) {
@@ -70,7 +71,6 @@ public class TestUtilities extends AndroidTestCase {
     static ContentValues createNorthPoleLocationValues() {
         // Create a new map of values, where column names are the keys
         ContentValues testValues = new ContentValues();
-        testValues.put(TrackContract.LocationEntry.COLUMN_LOCATION_SETTING, TEST_LOCATION);
         testValues.put(TrackContract.LocationEntry.COLUMN_CITY, "North Pole");
         testValues.put(TrackContract.LocationEntry.COLUMN_COORD_LAT, 64.7488);
         testValues.put(TrackContract.LocationEntry.COLUMN_COORD_LONG, -147.353);

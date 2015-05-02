@@ -54,18 +54,18 @@ public class TrackProvider extends ContentProvider {
     //location.location_setting = ?
     private static final String sLocationSettingSelection =
             TrackContract.LocationEntry.TABLE_NAME+
-                    "." + TrackContract.LocationEntry.COLUMN_LOCATION_SETTING + " = ? ";
+                    "." + TrackContract.LocationEntry.COLUMN_CITY + " = ? ";
 
     //location.location_setting = ? AND date >= ?
     private static final String sLocationSettingWithStartDateSelection =
             TrackContract.LocationEntry.TABLE_NAME+
-                    "." + TrackContract.LocationEntry.COLUMN_LOCATION_SETTING + " = ? AND " +
+                    "." + TrackContract.LocationEntry.COLUMN_CITY + " = ? AND " +
                     TrackContract.TrackEntry.COLUMN_CREATION_DATE + " >= ? ";
 
     //location.location_setting = ? AND date = ?
     private static final String sLocationSettingAndDaySelection =
             TrackContract.LocationEntry.TABLE_NAME +
-                    "." + TrackContract.LocationEntry.COLUMN_LOCATION_SETTING + " = ? AND " +
+                    "." + TrackContract.LocationEntry.COLUMN_CITY + " = ? AND " +
                     TrackContract.TrackEntry.COLUMN_CREATION_DATE + " = ? ";
 
     private Cursor getTrackByLocationSetting(Uri uri, String[] projection, String sortOrder) {

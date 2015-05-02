@@ -370,7 +370,7 @@ public class TestProvider extends AndroidTestCase {
 
         // Get the joined Weather and Location data
         trackCursor = mContext.getContentResolver().query(
-                TrackEntry.buildTrackLocation(TestUtilities.TEST_LOCATION),
+                TrackEntry.buildTrackLocation(TestUtilities.TEST_CITY),
                 null, // leaving "columns" null just returns all the columns.
                 null, // cols for "where" clause
                 null, // values for "where" clause
@@ -382,7 +382,7 @@ public class TestProvider extends AndroidTestCase {
         // Get the joined Weather and Location data with a start date
         trackCursor = mContext.getContentResolver().query(
                 TrackEntry.buildTrackLocationWithStartDate(
-                        TestUtilities.TEST_LOCATION, TestUtilities.TEST_DATE),
+                        TestUtilities.TEST_CITY, TestUtilities.TEST_DATE),
                 null, // leaving "columns" null just returns all the columns.
                 null, // cols for "where" clause
                 null, // values for "where" clause
@@ -393,7 +393,7 @@ public class TestProvider extends AndroidTestCase {
 
         // Get the joined Weather data for a specific date
         trackCursor = mContext.getContentResolver().query(
-                TrackEntry.buildTrackLocationWithDate(TestUtilities.TEST_LOCATION, TestUtilities.TEST_DATE),
+                TrackEntry.buildTrackLocationWithDate(TestUtilities.TEST_CITY, TestUtilities.TEST_DATE),
                 null,
                 null,
                 null,

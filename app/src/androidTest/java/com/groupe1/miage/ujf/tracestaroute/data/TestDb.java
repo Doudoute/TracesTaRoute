@@ -90,7 +90,6 @@ public class TestDb extends AndroidTestCase {
         locationColumnHashSet.add(TrackContract.LocationEntry.COLUMN_CITY);
         locationColumnHashSet.add(TrackContract.LocationEntry.COLUMN_COORD_LAT);
         locationColumnHashSet.add(TrackContract.LocationEntry.COLUMN_COORD_LONG);
-        locationColumnHashSet.add(TrackContract.LocationEntry.COLUMN_LOCATION_SETTING);
 
         int columnNameIndex = c.getColumnIndex("name");
         do {

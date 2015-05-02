@@ -55,7 +55,6 @@ public class TrackContract {
 
         // Table name
         public static final String TABLE_NAME = "location";
-        public static final String COLUMN_LOCATION_SETTING = "location_setting";
         public static final String COLUMN_CITY = "city";
         public static final String COLUMN_COORD_LAT = "coord_lat";
         public static final String COLUMN_COORD_LONG = "coord_long";
