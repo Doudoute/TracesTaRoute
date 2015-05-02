@@ -251,7 +251,9 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
 
             // add to database
             if ( cVVector.size() > 0 ) {
-                // Student: call bulkInsert to add the weatherEntries to the database here
+                ContentValues[] cvArray = new ContentValues[cVVector.size()];
+                cVVector.toArray(cvArray);
+                mContext.getContentResolver().bulkInsert(TrackEntry.CONTENT_URI, cvArray);
             }
 
             // Sort order:  Ascending, by date.
@@ -259,10 +261,8 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
             Uri trackForLocationUri = TrackEntry.buildTrackLocationWithStartDate(
                     locationSetting, String.valueOf(System.currentTimeMillis()));
 
-            // Students: Uncomment the next lines to display what what you stored in the bulkInsert
-
-//            Cursor cur = mContext.getContentResolver().query(trackForLocationUri,
-//                    null, null, null, sortOrder);
+//            Cursor cur = mContext.getContentResolver().query(trackForLocationUri,null, null, null,
+//                    sortOrder);
 //
 //            cVVector = new Vector<ContentValues>(cur.getCount());
 //            if ( cur.moveToFirst() ) {
