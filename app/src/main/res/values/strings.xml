@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">TracesTaRoute</string>
+    <string name="action_settings">Paramètres</string>
+    <string name="action_map">Localisation sur Map</string>
+    <string name="action_share">Partager</string>
+
+
+    <string name="action_refresh" translatable="false">Refresh</string>
+    <string name="title_activity_detail">Details</string>
+    <string name="title_activity_settings">Settings</string>
+    
+    <string name="pref_location_label">Location</string>
+    <string name="pref_location_key">location</string>
+    <string name="pref_location_default" translatable="false">62890</string>
+
+    <string name="no_track">Aucune randonnée disponible pour ce lieu</string>
+
+    <string name="pref_units_label">Unité de mesure</string>
+    <string name="pref_units_key" translatable="false">units</string>
+    <string name="pref_units_metric" translatable="false">metric</string>
+    <string name="pref_units_imperial" translatable="false">imperial</string>
+    <string name="pref_units_label_imperial">Imperial</string>
+    <string name="pref_units_label_metric">Métrique</string>
+
+
+
+</resources>
