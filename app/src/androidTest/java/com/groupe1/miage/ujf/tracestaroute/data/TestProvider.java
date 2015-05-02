@@ -419,7 +419,7 @@ public class TestProvider extends AndroidTestCase {
         TestUtilities.TestContentObserver weatherObserver = TestUtilities.getTestContentObserver();
         mContext.getContentResolver().registerContentObserver(TrackEntry.CONTENT_URI, true, weatherObserver);
 
-        deleteAllRecordsFromProvider();
+        deleteAllRecordsFromProvider();         
 
         // Students: If either of these fail, you most-likely are not calling the
         // getContext().getContentResolver().notifyChange(uri, null); in the ContentProvider
