@@ -137,7 +137,7 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         String postalcode = Utility.getPreferredLocation(getActivity());
 
         // Sort order:  Ascending, by date.
-        String sortOrder = TrackContract.TrackEntry.COLUMN_CREATION_DATE + " ASC";
+        String sortOrder = TrackContract.TrackEntry.COLUMN_CREATION_DATE + " DESC";
         Uri trackForLocationUri = TrackContract.TrackEntry.buildTrackLocation(postalcode);
 
         //NPO : remettre FORECAST_COLUMNS a la place du premier null

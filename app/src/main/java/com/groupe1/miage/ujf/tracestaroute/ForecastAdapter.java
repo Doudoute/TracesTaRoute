@@ -2,19 +2,23 @@ package com.groupe1.miage.ujf.tracestaroute;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.support.v4.widget.CursorAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
-
-import com.groupe1.miage.ujf.tracestaroute.data.TrackContract;
 
 /**
  * {@link ForecastAdapter} exposes a list of track forecasts
  * from a {@link android.database.Cursor} to a {@link android.widget.ListView}.
  */
 public class ForecastAdapter extends CursorAdapter{
+
+    private static final int VIEW_TYPE_COUNT = 2;
+    private static final int VIEW_TYPE_FIRST_TRACK = 0;
+    private static final int VIEW_TYPE_OTHER_TRACK = 1;
+
     Context mContext;
 
     public ForecastAdapter(Context context, Cursor c, int flags){
@@ -22,50 +26,25 @@ public class ForecastAdapter extends CursorAdapter{
         this.mContext = context;
     }
 
-    /**
-     * Transforme les valeurs {longueur, altitude min, latitude max} selon le système de mesure
-     * choisis
-     */
-    private String formatMesure(double distance, double altMin,double altMax){
-        boolean isMetric = Utility.isMetric(mContext);
-        String mesureStr = Utility.formatDistance(distance, isMetric) + "/" +
-                Utility.formatAltitude(altMin, isMetric) + "/" +
-                Utility.formatAltitude(altMax, isMetric);
-        return mesureStr;
-    }
-
-    /*
-       This is ported from FetchWeatherTask --- but now we go straight from the cursor to the
-       string.
-    */
-    private String convertCursorRowToUXFormat(Cursor cursor) {
-        // get row indices for our cursor
-        int idx_name = cursor.getColumnIndex(TrackContract.TrackEntry.COLUMN_NAME);
-        int idx_sport = cursor.getColumnIndex(TrackContract.TrackEntry.COLUMN_SPORT);
-        int idx_short_desc = cursor.getColumnIndex(TrackContract.TrackEntry.COLUMN_SHORT_DESC);
-        int idx_length = cursor.getColumnIndex(TrackContract.TrackEntry.COLUMN_LENGTH);
-        int idx_alt_min = cursor.getColumnIndex(TrackContract.TrackEntry.COLUMN_MIN_ALTITUDE);
-        int idx_alt_max = cursor.getColumnIndex(TrackContract.TrackEntry.COLUMN_MAX_ALTITUDE);
-
-        String formattedMesures = formatMesure(
-                cursor.getDouble(ForecastFragment.COL_TRACK_LENGTH),
-                cursor.getDouble(ForecastFragment.COL_TRACK_MAX_ALTITUDE),
-                cursor.getDouble(ForecastFragment.COL_TRACK_MIN_ALTITUDE));
-
-        return cursor.getString(ForecastFragment.COL_TRACK_NAME) +
-                " - " + cursor.getString(ForecastFragment.COL_TRACK_SPORT) +
-                " - " + cursor.getString(ForecastFragment.COL_TRACK_SHORT_DESC) +
-                " - " + formattedMesures;
-    }
-
     /*
         Remember that these views are reused as needed.
      */
     @Override
     public View newView(Context context, Cursor cursor, ViewGroup parent) {
-        View view = LayoutInflater.from(context).inflate(R.layout.list_item_forecast, parent, false);
-
-        return view;
+        // Choose the layout type
+        int viewType = getItemViewType(cursor.getPosition());
+        int layoutId = -1;
+        switch (viewType) {
+            case VIEW_TYPE_FIRST_TRACK: {
+                layoutId = R.layout.list_item_forecast_trackone;
+                break;
+            }
+            case VIEW_TYPE_OTHER_TRACK: {
+                layoutId = R.layout.list_item_forecast;
+                break;
+            }
+        }
+        return LayoutInflater.from(context).inflate(layoutId, parent, false);
     }
 
     /*
@@ -73,10 +52,46 @@ public class ForecastAdapter extends CursorAdapter{
      */
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
-        // our view is pretty simple here --- just a text view
-        // we'll keep the UI functional with a simple (and slow!) binding.
+        int trackId = cursor.getInt(ForecastFragment.COL_TRACK_ID);
+        String sport = cursor.getString(ForecastFragment.COL_TRACK_SPORT);
 
-        TextView tv = (TextView)view;
-        tv.setText(convertCursorRowToUXFormat(cursor));
+        ImageView iconView = (ImageView) view.findViewById(R.id.list_item_icon);
+        //mtb = velo
+        if(sport.equals("mtb")) {
+            iconView.setImageResource(R.drawable.velo);
+        }else{
+            iconView.setImageResource(R.drawable.rando);
+        }
+
+        String name = cursor.getString(ForecastFragment.COL_TRACK_NAME);
+        TextView nameView = (TextView) view.findViewById(R.id.list_item_track_textview);
+        nameView.setText(name);
+
+        String date = cursor.getString(ForecastFragment.COL_TRACK_CREATION_DATE);
+        TextView dateView = (TextView) view.findViewById(R.id.list_item_date_textview);
+        dateView.setText(date);
+
+        boolean isMetric = Utility.isMetric(context);
+
+        String unite = isMetric ? "m" : "ft";
+
+        double altMax = cursor.getDouble(ForecastFragment.COL_TRACK_MAX_ALTITUDE);
+        TextView altMaxView = (TextView) view.findViewById(R.id.list_item_altMax_textview);
+        altMaxView.setText("Altitude maximum : " + Utility.formatAltitude(altMax,isMetric) + unite);
+
+        double altMin = cursor.getDouble(ForecastFragment.COL_TRACK_MIN_ALTITUDE);
+        TextView altMinView = (TextView) view.findViewById(R.id.list_item_altMin_textview);
+        altMinView.setText("Altitude minimum : " + Utility.formatAltitude(altMin,isMetric) + unite);
+
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return position == 0 ? VIEW_TYPE_FIRST_TRACK : VIEW_TYPE_OTHER_TRACK;
+    }
+
+    @Override
+    public int getViewTypeCount() {
+        return VIEW_TYPE_COUNT;
     }
 }
