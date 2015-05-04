@@ -18,14 +18,10 @@ package com.groupe1.miage.ujf.tracestaroute;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.preference.PreferenceManager;
 import android.util.Log;
-import android.widget.ArrayAdapter;
-import android.widget.Toast;
 
 import com.groupe1.miage.ujf.tracestaroute.data.TrackContract;
 import com.groupe1.miage.ujf.tracestaroute.data.TrackContract.TrackEntry;
@@ -42,40 +38,17 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Vector;
 
-public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
+public class FetchTrackTask extends AsyncTask<String, Void, Void> {
 
     private final String LOG_TAG = FetchTrackTask.class.getSimpleName();
 
-    private ArrayAdapter<String> mForecastAdapter;
     private final Context mContext;
 
-    public FetchTrackTask(Context context, ArrayAdapter<String> forecastAdapter) {
+    public FetchTrackTask(Context context) {
         mContext = context;
-        mForecastAdapter = forecastAdapter;
     }
 
     private boolean DEBUG = true;
-
-    private String formatMesure(double distance, double altMin,double altMax){
-        SharedPreferences sharedPrefs =
-                PreferenceManager.getDefaultSharedPreferences(mContext);
-        String unitType = sharedPrefs.getString(
-                mContext.getString(R.string.pref_units_key),
-                mContext.getString(R.string.pref_units_metric));
-        if (unitType.equals(mContext.getString(R.string.pref_units_imperial))){
-            altMax = (altMax/0.3048);
-            altMin = (altMin/0.3048);
-            distance = (distance/1.609344);
-        }else if(!unitType.equals(mContext.getString(R.string.pref_units_metric))){
-            Log.d(LOG_TAG,"Type d'unité non trouvé : "+unitType);
-        }
-        long roundedAltMax = Math.round(altMax);
-        long roundedAltMin = Math.round(altMin);
-        long roundedDistance = Math.round(distance);
-
-        String mesureStr = roundedDistance+"/"+roundedAltMin+ "/" +roundedAltMax;
-        return mesureStr;
-    }
 
     /**
      * Helper method to handle insertion of a new location in the weather database.
@@ -92,9 +65,9 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
         Cursor locationCursor = mContext.getContentResolver().query(
                 TrackContract.LocationEntry.CONTENT_URI,
                 new String[]{TrackContract.LocationEntry._ID},
-                TrackContract.LocationEntry.COLUMN_CITY + " = ? AND " +
-                TrackContract.LocationEntry.COLUMN_COORD_LAT + " = ? AND " +
-                TrackContract.LocationEntry.COLUMN_COORD_LONG + " = ?",
+                TrackContract.LocationEntry.COLUMN_LOC_CITY + " = ? AND " +
+                TrackContract.LocationEntry.COLUMN_LOC_COORD_LAT + " = ? AND " +
+                TrackContract.LocationEntry.COLUMN_LOC_COORD_LONG + " = ?",
                 new String[]{cityName,String.valueOf(lat),String.valueOf(lon)},
                 null);
 
@@ -106,9 +79,9 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
             ContentValues locationValues = new ContentValues();
 
             //Ajout des informations
-            locationValues.put(TrackContract.LocationEntry.COLUMN_CITY, cityName);
-            locationValues.put(TrackContract.LocationEntry.COLUMN_COORD_LAT, lat);
-            locationValues.put(TrackContract.LocationEntry.COLUMN_COORD_LONG, lon);
+            locationValues.put(TrackContract.LocationEntry.COLUMN_LOC_CITY, cityName);
+            locationValues.put(TrackContract.LocationEntry.COLUMN_LOC_COORD_LAT, lat);
+            locationValues.put(TrackContract.LocationEntry.COLUMN_LOC_COORD_LONG, lon);
 
             //Insertion dans la BD
             Uri insertedUri = mContext.getContentResolver().insert(
@@ -123,28 +96,6 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
         return locationId;
     }
 
-    /*
-        Students: This code will allow the FetchTrackTask to continue to return the strings that
-        the UX expects so that we can continue to test the application even once we begin using
-        the database.
-     */
-    String[] convertContentValuesToUXFormat(Vector<ContentValues> cvv) {
-        // return strings to keep UI functional for now
-        String[] resultStrs = new String[cvv.size()];
-        for ( int i = 0; i < cvv.size(); i++ ) {
-            ContentValues trackValues = cvv.elementAt(i);
-            String highAndLow = formatMesure(
-                    trackValues.getAsDouble(TrackEntry.COLUMN_LENGTH),
-                    trackValues.getAsDouble(TrackEntry.COLUMN_MIN_ALTITUDE),
-                    trackValues.getAsDouble(TrackEntry.COLUMN_MAX_ALTITUDE));
-            resultStrs[i] = trackValues.getAsString(TrackEntry.COLUMN_NAME) +
-                    " - " + trackValues.getAsString(TrackEntry.COLUMN_SPORT) +
-                    " - " + trackValues.getAsString(TrackEntry.COLUMN_SHORT_DESC) +
-                    " - " + highAndLow;
-        }
-        return resultStrs;
-    }
-
     /**
      * Take the String representing the complete forecast in JSON Format and
      * pull out the data we need to construct the Strings needed for the wireframes.
@@ -152,8 +103,7 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
      * Fortunately parsing is easy:  constructor takes the JSON string and converts it
      * into an Object hierarchy for us.
      */
-    private String[] getTrackDataFromJson(String forecastJsonStr,
-                                            String locationSetting)
+    private void getTrackDataFromJson(String forecastJsonStr)
             throws JSONException {
 
         // These are the names of the JSON objects that need to be extracted.
@@ -164,6 +114,7 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
 		final String LT_NAME = "name";
 		final String LT_DESC = "description";
 		final String LT_LENGTH = "length";
+		final String LT_POSTALCODE = "postalcode";
 		final String LT_ALT_MIN = "altMin";
 		final String LT_ALT_MAX = "altMax";
 		final String LT_URL = "url";
@@ -188,6 +139,7 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
                 String name;
                 String description;
                 double length;
+                int postalcode;
                 double altMin;
                 double altMax;
                 String url;
@@ -207,6 +159,7 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
                 name = numTrackForecast.getString(LT_NAME);
                 description = numTrackForecast.getString(LT_DESC);
                 length = numTrackForecast.getDouble(LT_LENGTH);
+                postalcode = numTrackForecast.getInt(LT_POSTALCODE);
                 altMin = numTrackForecast.getDouble(LT_ALT_MIN);
                 altMax = numTrackForecast.getDouble(LT_ALT_MAX);
                 url = numTrackForecast.getString(LT_URL);
@@ -227,19 +180,20 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
                 //length = Double.valueOf(tabMes[0]);
                 //altMin = Double.valueOf(tabMes[1]);
                 //altMax = Double.valueOf(tabMes[2]);
-				
+
 				//Insertion des villes de départ et d'arrivée en BD
 				long locationIdD = addLocation(cityDepart, yDepart, xDepart);
 				long locationIdA = addLocation(cityArrivee, yArrivee, xArrivee);
 
                 ContentValues trackValues = new ContentValues();
-				
+
 				trackValues.put(TrackContract.TrackEntry.COLUMN_TRACK_ID, id);
 				trackValues.put(TrackContract.TrackEntry.COLUMN_SPORT, sport);
 				trackValues.put(TrackContract.TrackEntry.COLUMN_CREATION_DATE, dateCreation);
 				trackValues.put(TrackContract.TrackEntry.COLUMN_NAME, name);
 				trackValues.put(TrackContract.TrackEntry.COLUMN_SHORT_DESC, description);
 				trackValues.put(TrackContract.TrackEntry.COLUMN_LENGTH, length);
+				trackValues.put(TrackContract.TrackEntry.COLUMN_POSTALCODE, postalcode);
 				trackValues.put(TrackContract.TrackEntry.COLUMN_MIN_ALTITUDE, altMin);
 				trackValues.put(TrackContract.TrackEntry.COLUMN_MAX_ALTITUDE, altMax);
 				trackValues.put(TrackContract.TrackEntry.COLUMN_URL, url);
@@ -249,44 +203,31 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
                 cVVector.add(trackValues);
             }
 
+            int inserted = 0;
+
             // add to database
             if ( cVVector.size() > 0 ) {
                 ContentValues[] cvArray = new ContentValues[cVVector.size()];
                 cVVector.toArray(cvArray);
-                mContext.getContentResolver().bulkInsert(TrackEntry.CONTENT_URI, cvArray);
+                inserted = mContext.getContentResolver().bulkInsert(TrackEntry.CONTENT_URI, cvArray);
             }
 
-            // Sort order:  Ascending, by date.
-            String sortOrder = TrackEntry.COLUMN_CREATION_DATE + " ASC";
-            Uri trackForLocationUri = TrackEntry.buildTrackLocationWithStartDate(
-                    locationSetting, String.valueOf(System.currentTimeMillis()));
-
-//            Cursor cur = mContext.getContentResolver().query(trackForLocationUri,null, null, null,
-//                    sortOrder);
-//
-//            cVVector = new Vector<ContentValues>(cur.getCount());
-//            if ( cur.moveToFirst() ) {
-//                do {
-//                    ContentValues cv = new ContentValues();
-//                    DatabaseUtils.cursorRowToContentValues(cur, cv);
-//                    cVVector.add(cv);
-//                } while (cur.moveToNext());
-//            }
-
-            Log.d(LOG_TAG, "FetchTrackTask Complete. " + cVVector.size() + " Inserted");
-
-            String[] resultStrs = convertContentValuesToUXFormat(cVVector);
-            return resultStrs;
+            Log.d(LOG_TAG, "FetchTrackTask Complete. " + inserted + " Inserted");
 
         } catch (JSONException e) {
             Log.e(LOG_TAG, e.getMessage(), e);
             e.printStackTrace();
         }
-        return null;
     }
 
     @Override
-    protected String[] doInBackground(String... params) {
+    protected Void doInBackground(String... params) {
+
+        // If there's no zip code, there's nothing to look up.  Verify size of params.
+        if (params.length == 0) {
+            return null;
+        }
+        String postalcodeQuery = params[0];
 
         // These two need to be declared outside the try/catch
 		// so that they can be closed in the finally block.
@@ -307,14 +248,13 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
 			final String LIMIT_PARAM = "limit";
 			final String POSTAL_CODE = "postalcode";
 			final String API_KEY = "api_key";
+
 			Uri builtUri = Uri.parse(FORECAST_BASE_URL).buildUpon()
-					.appendQueryParameter(POSTAL_CODE, params[0])
+					.appendQueryParameter(POSTAL_CODE, postalcodeQuery)
 					.appendQueryParameter(API_KEY, api_key)
 					.build();
 
 			URL url = new URL(builtUri.toString());
-
-			Log.v(LOG_TAG, "Built Uri " + builtUri.toString());
 
 			urlConnection = (HttpURLConnection) url.openConnection();
 			urlConnection.setRequestMethod("GET");
@@ -342,15 +282,13 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
 				return null;
 			}
 			forecastJsonStr = buffer.toString();
-
-			Log.v(LOG_TAG, "Forecast JSON String " + forecastJsonStr);
-
+            getTrackDataFromJson(forecastJsonStr);
 		} catch (IOException e) {
 			Log.e(LOG_TAG, "Error ", e);
-			// If the code didn't successfully get the weather data, there's no point in attemping
-			// to parse it.
-			return null;
-		} finally{
+		} catch (JSONException e){
+            Log.e(LOG_TAG, e.getMessage(), e);
+            e.printStackTrace();
+        }finally{
 			if (urlConnection != null) {
 				urlConnection.disconnect();
 			}
@@ -362,25 +300,6 @@ public class FetchTrackTask extends AsyncTask<String, Void, String[]> {
 				}
 			}
 		}
-		try{
-			return getTrackDataFromJson(forecastJsonStr, params[0]);
-		} catch (JSONException e) {
-			Log.e(LOG_TAG, e.getMessage(), e);
-			e.printStackTrace();
-		}
 		return null;
-    }
-
-    @Override
-    protected void onPostExecute(String[] result) {
-        if (result != null && mForecastAdapter != null) {
-            mForecastAdapter.clear();
-            for(String dayForecastStr : result) {
-                mForecastAdapter.add(dayForecastStr);
-            }
-            if(result.length == 0){
-                Toast.makeText(mForecastAdapter.getContext(), R.string.no_track, Toast.LENGTH_SHORT).show();
-            }
-        }
     }
 }

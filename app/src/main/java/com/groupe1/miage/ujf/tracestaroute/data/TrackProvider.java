@@ -33,6 +33,7 @@ public class TrackProvider extends ContentProvider {
     static final int TRACK = 100;
     static final int TRACK_WITH_LOCATION = 101;
     static final int TRACK_WITH_LOCATION_AND_DATE = 102;
+    static final int TRACK_WITH_ID = 103;
     static final int LOCATION = 300;
 
     private static final SQLiteQueryBuilder sTrackByLocationSettingQueryBuilder;
@@ -43,32 +44,37 @@ public class TrackProvider extends ContentProvider {
         //This is an inner join which looks like
         //weather INNER JOIN location ON weather.location_id = location._id
         sTrackByLocationSettingQueryBuilder.setTables(
-                TrackContract.TrackEntry.TABLE_NAME + " INNER JOIN " +
-                        TrackContract.LocationEntry.TABLE_NAME +
-                        " ON " + TrackContract.TrackEntry.TABLE_NAME +
-                        "." + TrackContract.TrackEntry.COLUMN_LOC_KEY_DEPART +
-                        " = " + TrackContract.LocationEntry.TABLE_NAME +
-                        "." + TrackContract.LocationEntry._ID);
+                TrackContract.TrackEntry.TABLE_NAME +
+                        " INNER JOIN " + TrackContract.LocationEntry.TABLE_NAME + " AS " +
+                        TrackContract.LocationEntry.ALIAS_DEPART + " " + " ON " +
+                        TrackContract.TrackEntry.TABLE_NAME + "." +
+                        TrackContract.TrackEntry.COLUMN_LOC_KEY_DEPART + " = " +
+                        TrackContract.LocationEntry.ALIAS_DEPART + "." +
+                        TrackContract.LocationEntry._ID +
+                        " INNER JOIN " + TrackContract.LocationEntry.TABLE_NAME + " AS " +
+                        TrackContract.LocationEntry.ALIAS_ARRIVEE + " " + " ON " +
+                        TrackContract.TrackEntry.TABLE_NAME+ "." +
+                        TrackContract.TrackEntry.COLUMN_LOC_KEY_ARRIVE + " = " +
+                        TrackContract.LocationEntry.ALIAS_ARRIVEE + "." +
+                        TrackContract.LocationEntry._ID
+        );
     }
 
     //location.location_setting = ?
-    private static final String sLocationSettingSelection =
-            TrackContract.LocationEntry.TABLE_NAME+
-                    "." + TrackContract.LocationEntry.COLUMN_CITY + " = ? ";
+    private static final String sPostalcodeSettingSelection =
+            TrackContract.TrackEntry.TABLE_NAME+
+                    "." + TrackContract.TrackEntry.COLUMN_POSTALCODE + " = ? ";
 
     //location.location_setting = ? AND date >= ?
-    private static final String sLocationSettingWithStartDateSelection =
-            TrackContract.LocationEntry.TABLE_NAME+
-                    "." + TrackContract.LocationEntry.COLUMN_CITY + " = ? AND " +
+    private static final String sPostalcodeSettingWithStartDateSelection =
+            TrackContract.TrackEntry.TABLE_NAME+
+                    "." + TrackContract.TrackEntry.COLUMN_POSTALCODE + " = ? AND " +
                     TrackContract.TrackEntry.COLUMN_CREATION_DATE + " >= ? ";
 
-    //location.location_setting = ? AND date = ?
-    private static final String sLocationSettingAndDaySelection =
-            TrackContract.LocationEntry.TABLE_NAME +
-                    "." + TrackContract.LocationEntry.COLUMN_CITY + " = ? AND " +
-                    TrackContract.TrackEntry.COLUMN_CREATION_DATE + " = ? ";
+    private static final String sId = TrackContract.TrackEntry.TABLE_NAME + "." +
+            TrackContract.TrackEntry._ID + " = ? ";
 
-    private Cursor getTrackByLocationSetting(Uri uri, String[] projection, String sortOrder) {
+    private Cursor getTrackByPostalcodeSetting(Uri uri, String[] projection, String sortOrder) {
         String locationSetting = TrackContract.TrackEntry.getLocationSettingFromUri(uri);
         String startDate = TrackContract.TrackEntry.getStartDateFromUri(uri);
 
@@ -76,11 +82,11 @@ public class TrackProvider extends ContentProvider {
         String selection;
 
         if (startDate == "") {
-            selection = sLocationSettingSelection;
+            selection = sPostalcodeSettingSelection;
             selectionArgs = new String[]{locationSetting};
         } else {
             selectionArgs = new String[]{locationSetting, startDate};
-            selection = sLocationSettingWithStartDateSelection;
+            selection = sPostalcodeSettingWithStartDateSelection;
         }
 
         return sTrackByLocationSettingQueryBuilder.query(mOpenHelper.getReadableDatabase(),
@@ -93,18 +99,19 @@ public class TrackProvider extends ContentProvider {
         );
     }
 
-    private Cursor getTrackByLocationSettingAndDate(
-            Uri uri, String[] projection, String sortOrder) {
-        String locationSetting = TrackContract.TrackEntry.getLocationSettingFromUri(uri);
-        String date = TrackContract.TrackEntry.getDateFromUri(uri);
+    private Cursor getTrackById(Uri uri, String[] projection) {
+        String id = TrackContract.TrackEntry.getIdFromUri(uri);
+
+        String[] selectionArgs = new String[]{id};
+        String selection = sId;
 
         return sTrackByLocationSettingQueryBuilder.query(mOpenHelper.getReadableDatabase(),
                 projection,
-                sLocationSettingAndDaySelection,
-                new String[]{locationSetting, date},
+                selection,
+                selectionArgs,
                 null,
                 null,
-                sortOrder
+                null
         );
     }
 
@@ -125,29 +132,21 @@ public class TrackProvider extends ContentProvider {
         final String authority = TrackContract.CONTENT_AUTHORITY;
 
         // For each type of URI you want to add, create a corresponding code.
-        matcher.addURI(authority, TrackContract.PATH_TRACK, TRACK);
-        matcher.addURI(authority, TrackContract.PATH_TRACK + "/*", TRACK_WITH_LOCATION);
-        matcher.addURI(authority, TrackContract.PATH_TRACK + "/*/*", TRACK_WITH_LOCATION_AND_DATE);
+        matcher.addURI(authority, TrackContract.PATH_TRACK + "/#", TRACK_WITH_ID);
+        matcher.addURI(authority, TrackContract.PATH_TRACK + "/" + TrackContract.PATH_TRACK_LIST + "/#", TRACK_WITH_LOCATION);
+        matcher.addURI(authority, TrackContract.PATH_TRACK + "/" + TrackContract.PATH_TRACK_LIST + "/#/*", TRACK_WITH_LOCATION_AND_DATE);
 
+        matcher.addURI(authority, TrackContract.PATH_TRACK, TRACK);
         matcher.addURI(authority, TrackContract.PATH_LOCATION, LOCATION);
         return matcher;
     }
 
-    /*
-        Students: We've coded this for you.  We just create a new TrackDbHelper for later use
-        here.
-     */
     @Override
     public boolean onCreate() {
         mOpenHelper = new TrackDbHelper(getContext());
         return true;
     }
 
-    /*
-        Students: Here's where you'll code the getType function that uses the UriMatcher.  You can
-        test this by uncommenting testGetType in TestProvider.
-
-     */
     @Override
     public String getType(Uri uri) {
 
@@ -157,9 +156,8 @@ public class TrackProvider extends ContentProvider {
         switch (match) {
             // Student: Uncomment and fill out these two cases
             case TRACK_WITH_LOCATION_AND_DATE:
-                return TrackContract.TrackEntry.CONTENT_ITEM_TYPE;
             case TRACK_WITH_LOCATION:
-                return TrackContract.TrackEntry.CONTENT_TYPE;
+                return TrackContract.TrackEntry.CONTENT_ITEM_TYPE;
             case TRACK:
                 return TrackContract.TrackEntry.CONTENT_TYPE;
             case LOCATION:
@@ -178,16 +176,15 @@ public class TrackProvider extends ContentProvider {
         switch (sUriMatcher.match(uri)) {
             // "weather/*/*"
             case TRACK_WITH_LOCATION_AND_DATE:
-            {
-                retCursor = getTrackByLocationSettingAndDate(uri, projection, sortOrder);
-                break;
-            }
-            // "weather/*"
             case TRACK_WITH_LOCATION: {
-                retCursor = getTrackByLocationSetting(uri, projection, sortOrder);
+                retCursor = getTrackByPostalcodeSetting(uri, projection, sortOrder);
                 break;
             }
             // "weather"
+            case TRACK_WITH_ID: {
+                retCursor = getTrackById(uri, projection);
+                break;
+            }
             case TRACK: {
                 retCursor = mOpenHelper.getReadableDatabase().query(
                         TrackContract.TrackEntry.TABLE_NAME,
@@ -221,9 +218,6 @@ public class TrackProvider extends ContentProvider {
         return retCursor;
     }
 
-    /*
-        Student: Add the ability to insert Locations to the implementation of this function.
-     */
     @Override
     public Uri insert(Uri uri, ContentValues values) {
         final SQLiteDatabase db = mOpenHelper.getWritableDatabase();

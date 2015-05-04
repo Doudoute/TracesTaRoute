@@ -38,38 +38,32 @@ public class TrackDbHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
-
         final String SQL_CREATE_LOCATION_TABLE = "CREATE TABLE " + LocationEntry.TABLE_NAME + " (" +
                 LocationEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
 
-                LocationEntry.COLUMN_CITY + " TEXT NOT NULL, " +
-                LocationEntry.COLUMN_COORD_LAT + " REAL NOT NULL, " +
-                LocationEntry.COLUMN_COORD_LONG + " REAL NOT NULL); ";
+                LocationEntry.COLUMN_LOC_CITY + " TEXT NOT NULL, " +
+                LocationEntry.COLUMN_LOC_COORD_LAT + " REAL NOT NULL, " +
+                LocationEntry.COLUMN_LOC_COORD_LONG + " REAL NOT NULL); ";
 
         sqLiteDatabase.execSQL(SQL_CREATE_LOCATION_TABLE);
 
         final String SQL_CREATE_TRACK_TABLE = "CREATE TABLE " + TrackEntry.TABLE_NAME + " (" +
-                // Why AutoIncrement here, and not above?
-                // Unique keys will be auto-generated in either case.  But for weather
-                // forecasting, it's reasonable to assume the user will want information
-                // for a certain date and all dates *following*, so the forecast data
-                // should be sorted accordingly.
                 TrackEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+
+                TrackEntry.COLUMN_TRACK_ID + " INTEGER UNIQUE NOT NULL, " +
+                TrackEntry.COLUMN_SPORT + " TEXT NOT NULL, " +
+                TrackEntry.COLUMN_CREATION_DATE + " STRING NOT NULL, " +
+                TrackEntry.COLUMN_NAME + " TEXT NOT NULL, " +
+                TrackEntry.COLUMN_SHORT_DESC + " TEXT NOT NULL, " +
+                TrackEntry.COLUMN_LENGTH + " REAL NOT NULL, " +
+                TrackEntry.COLUMN_POSTALCODE + " INTEGER NOT NULL, " +
+                TrackEntry.COLUMN_MAX_ALTITUDE + " REAL NOT NULL, " +
+                TrackEntry.COLUMN_MIN_ALTITUDE + " REAL NOT NULL, " +
+                TrackEntry.COLUMN_URL + " TEXT NOT NULL, " +
 
                 // the ID of the location entry associated with this weather data
                 TrackEntry.COLUMN_LOC_KEY_DEPART + " INTEGER NOT NULL, " +
                 TrackEntry.COLUMN_LOC_KEY_ARRIVE + " INTEGER NOT NULL, " +
-                TrackEntry.COLUMN_CREATION_DATE + " STRING NOT NULL, " +
-                TrackEntry.COLUMN_SHORT_DESC + " TEXT NOT NULL, " +
-                TrackEntry.COLUMN_TRACK_ID + " INTEGER NOT NULL, " +
-
-                TrackEntry.COLUMN_MIN_ALTITUDE + " REAL NOT NULL, " +
-                TrackEntry.COLUMN_MAX_ALTITUDE + " REAL NOT NULL, " +
-
-                TrackEntry.COLUMN_SPORT + " TEXT NOT NULL, " +
-                TrackEntry.COLUMN_NAME + " TEXT NOT NULL, " +
-                TrackEntry.COLUMN_LENGTH + " REAL NOT NULL, " +
-                TrackEntry.COLUMN_URL + " TEXT NOT NULL, " +
 
                 // Set up the location column as a foreign key to location table.
                 " FOREIGN KEY (" + TrackEntry.COLUMN_LOC_KEY_DEPART + ") REFERENCES " +

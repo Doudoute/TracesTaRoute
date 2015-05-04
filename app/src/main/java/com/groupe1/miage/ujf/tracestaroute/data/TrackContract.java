@@ -36,6 +36,7 @@ public class TrackContract {
     public static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
     public static final String PATH_TRACK = "track";
+    public static final String PATH_TRACK_LIST = "list";
     public static final String PATH_LOCATION = "location";
 
     /*
@@ -53,11 +54,14 @@ public class TrackContract {
         public static final String CONTENT_ITEM_TYPE =
                 ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_LOCATION;
 
+        public static final String ALIAS_DEPART = "DEPART";
+        public static final String ALIAS_ARRIVEE = "ARRIVEE";
+
         // Table name
         public static final String TABLE_NAME = "location";
-        public static final String COLUMN_CITY = "city";
-        public static final String COLUMN_COORD_LAT = "coord_lat";
-        public static final String COLUMN_COORD_LONG = "coord_long";
+        public static final String COLUMN_LOC_CITY = "city";
+        public static final String COLUMN_LOC_COORD_LAT = "coord_lat";
+        public static final String COLUMN_LOC_COORD_LONG = "coord_long";
 
         public static Uri buildLocationUri(long id) {
             return ContentUris.withAppendedId(CONTENT_URI, id);
@@ -71,39 +75,30 @@ public class TrackContract {
         public static final Uri CONTENT_URI =
                 BASE_CONTENT_URI.buildUpon().appendPath(PATH_TRACK).build();
 
+        public static final Uri CONTENT_LIST_URI =
+                BASE_CONTENT_URI.buildUpon().appendPath(PATH_TRACK).build().buildUpon().appendPath(PATH_TRACK_LIST).build();
+
         public static final String CONTENT_TYPE =
                 ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_TRACK;
         public static final String CONTENT_ITEM_TYPE =
-                ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_TRACK;
+                ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_TRACK + "/" + PATH_TRACK_LIST;
 
         public static final String TABLE_NAME = "track";
+
+        public static final String COLUMN_TRACK_ID = "track_id";
+        public static final String COLUMN_SPORT = "sport";
+        public static final String COLUMN_CREATION_DATE = "creation_date";
+        public static final String COLUMN_NAME = "name";
+        public static final String COLUMN_SHORT_DESC = "short_desc";
+        public static final String COLUMN_LENGTH = "length";
+        public static final String COLUMN_POSTALCODE = "postalcode";
+        public static final String COLUMN_MAX_ALTITUDE = "max";
+        public static final String COLUMN_MIN_ALTITUDE = "min";
+        public static final String COLUMN_URL = "url";
 
         // Column with the foreign key into the location table.
         public static final String COLUMN_LOC_KEY_DEPART = "location_id_depart";
         public static final String COLUMN_LOC_KEY_ARRIVE = "location_id_arrive";
-        // Date, stored as long in milliseconds since the epoch
-        public static final String COLUMN_CREATION_DATE = "creation_date";
-        public static final String COLUMN_TRACK_ID = "track_id";
-
-        // Short description and long description of the track, as provided by API.
-        // e.g "clear" vs "sky is clear".
-        public static final String COLUMN_SHORT_DESC = "short_desc";
-
-        // Min and max temperatures for the day (stored as floats)
-        public static final String COLUMN_MIN_ALTITUDE = "min";
-        public static final String COLUMN_MAX_ALTITUDE = "max";
-
-        // Humidity is stored as a float representing percentage
-        public static final String COLUMN_SPORT = "sport";
-
-        // Humidity is stored as a float representing percentage
-        public static final String COLUMN_NAME = "name";
-
-        // Windspeed is stored as a float representing windspeed  mph
-        public static final String COLUMN_LENGTH = "length";
-
-        // Degrees are meteorological degrees (e.g, 0 is north, 180 is south).  Stored as floats.
-        public static final String COLUMN_URL = "url";
 
         public static Uri buildTrackUri(long id) {
             return ContentUris.withAppendedId(CONTENT_URI, id);
@@ -113,26 +108,25 @@ public class TrackContract {
             Student: Fill in this buildTrackLocation function
         */
         public static Uri buildTrackLocation(String locationSetting) {
-            return CONTENT_URI.buildUpon().appendPath(locationSetting).build();
+            return CONTENT_LIST_URI.buildUpon().appendPath(locationSetting).build();
         }
 
-        public static Uri buildTrackLocationWithStartDate(String locationSetting, String startDate){
+        public static Uri buildTrackLocationWithCreationDate(String locationSetting, String creationDate){
 
-            return CONTENT_URI.buildUpon().appendPath(locationSetting)
-                    .appendQueryParameter(COLUMN_CREATION_DATE, startDate).build();
-        }
-
-        public static Uri buildTrackLocationWithDate(String locationSetting, String date) {
-            return CONTENT_URI.buildUpon().appendPath(locationSetting)
-                    .appendPath(date).build();
+            return CONTENT_LIST_URI.buildUpon().appendPath(locationSetting)
+                    .appendQueryParameter(COLUMN_CREATION_DATE, creationDate).build();
         }
 
         public static String getLocationSettingFromUri(Uri uri) {
-            return uri.getPathSegments().get(1);
+            return uri.getPathSegments().get(2);
         }
 
         public static String getDateFromUri(Uri uri) {
-            return uri.getPathSegments().get(2);
+            return uri.getPathSegments().get(3);
+        }
+
+        public static String getIdFromUri(Uri uri){
+            return  uri.getPathSegments().get(1);
         }
 
         public static String getStartDateFromUri(Uri uri) {

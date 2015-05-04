@@ -36,7 +36,9 @@
         </activity>
         <provider
             android:authorities="com.groupe1.miage.ujf.tracestaroute"
-            android:name=".data.TrackProvider"/>
+            android:name=".data.TrackProvider"
+            android:enabled="true"
+            android:exported="true"/>
     </application>
 
 </manifest>

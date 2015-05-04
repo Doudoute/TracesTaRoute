@@ -38,7 +38,7 @@ public class TestFetchTrackTask extends AndroidTestCase{
                 TrackContract.LocationEntry.COLUMN_CITY + " = ?",
                 new String[]{ADD_LOCATION_CITY});
 
-        FetchTrackTask fwt = new FetchTrackTask(getContext(), null);
+        FetchTrackTask fwt = new FetchTrackTask(getContext());
         long locationId = fwt.addLocation(ADD_LOCATION_CITY,ADD_LOCATION_LAT, ADD_LOCATION_LON);
 
         // does addLocation return a valid record ID?
